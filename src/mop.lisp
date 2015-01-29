@@ -81,8 +81,9 @@
   `(function (t mm-object) t))
 
 
-(defgeneric slot-definition-memory-mapped (slotd)
-  (:method (slotd) (declare (ignorable slotd))))
+(eval-when (:compile-toplevel :load-toplevel)
+  (defgeneric slot-definition-memory-mapped (slotd)
+    (:method (slotd) (declare (ignorable slotd)))))
 
 
 (defgeneric slot-definition-mmap-pointer-p (slotd)

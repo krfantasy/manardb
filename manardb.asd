@@ -19,7 +19,9 @@
   :author            "John Fremlin"
   :author            "Dan Lentz <danlentz@gmail.com>"
   :maintainer        "Dan Lentz <danlentz@gmail.com>"
-  :depends-on (:alexandria :osicat :iterate :closer-mop :contextl :cl-irregsexp)
+  :depends-on (:alexandria :osicat :iterate :closer-mop :contextl :cl-irregsexp
+                           #-sbcl :bordeaux-threads
+                           #+sbcl :sb-concurrency)
   :components ((:module src :serial t
                  :components ((:static-file "manardb.asd")
                                (:file "package")

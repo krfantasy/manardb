@@ -142,25 +142,34 @@
   (setf min-bytes (round-up-to-pagesize min-bytes))
   (when finalize  (mtagmap-finalize mtagmap))
   (let ((fd (osicat-posix:open file (logior osicat-posix:O-CREAT osicat-posix:O-RDWR))))
-    (unwind-protect (let ((bytes (fd-file-length fd)))
-                      (when (> min-bytes bytes)
-                        (check-mmap-truncate-okay)
-                        (osicat-posix:ftruncate fd min-bytes)
-                        (setf bytes min-bytes))
-                      (assert (>= bytes +word-length+))	   
-                      (let ((ptr (osicat-posix:mmap (cffi:null-pointer) bytes
-                                   protection sharing fd 0)))
-                        (unwind-protect
-                          (let ((new-mtagmap (make-mtagmap :fd fd :ptr ptr :len bytes)))
-                            (when (zerop (mtagmap-next new-mtagmap))
-                              (setf (mtagmap-next new-mtagmap) +word-length+))
-                            (mtagmap-check new-mtagmap)
-                            (setf
-                              (mtagmap-fd mtagmap) fd
-                              (mtagmap-ptr mtagmap) ptr
-                              (mtagmap-len mtagmap) bytes
-                              fd nil ptr nil))
-                          (when ptr (osicat-posix:munmap ptr bytes)))))
+    (unwind-protect (progn
+                      ;; On macOS 14.6 with SBCL 2.4.7, `osicat-posix:open' creates file with mode '000' and ignores the `mode' parameter.
+                      ;; I don't know if this is a SBCL bug or macOS related problem, so here is a workaround to temporary fix it.
+                      #+darwin
+                      (osicat-posix:fchmod fd
+                                           (logior osicat-posix:s-irusr osicat-posix:s-iwusr ; 6
+                                                   osicat-posix:s-irgrp ; 4
+                                                   osicat-posix:s-iroth ; 4
+                                                   ))
+                      (let ((bytes (fd-file-length fd)))
+                        (when (> min-bytes bytes)
+                          (check-mmap-truncate-okay)
+                          (osicat-posix:ftruncate fd min-bytes)
+                          (setf bytes min-bytes))
+                        (assert (>= bytes +word-length+))
+                        (let ((ptr (osicat-posix:mmap (cffi:null-pointer) bytes
+                                                      protection sharing fd 0)))
+                          (unwind-protect
+                               (let ((new-mtagmap (make-mtagmap :fd fd :ptr ptr :len bytes)))
+                                 (when (zerop (mtagmap-next new-mtagmap))
+                                   (setf (mtagmap-next new-mtagmap) +word-length+))
+                                 (mtagmap-check new-mtagmap)
+                                 (setf
+                                  (mtagmap-fd mtagmap) fd
+                                  (mtagmap-ptr mtagmap) ptr
+                                  (mtagmap-len mtagmap) bytes
+                                  fd nil ptr nil))
+                            (when ptr (osicat-posix:munmap ptr bytes))))))
       (when fd (osicat-posix:close fd))))
   mtagmap)
 
@@ -168,7 +177,7 @@
 (defun mtagmap-resize (mtagmap new-len)
   (assert (not (mtagmap-closed-p mtagmap)))
   (check-mmap-truncate-okay)
-  (with-exclusive-operation 
+  (with-exclusive-operation
     (symbol-macrolet ((len (mtagmap-len mtagmap)))
       (flet ((trunc ()
                (osicat-posix:ftruncate (mtagmap-fd mtagmap) new-len))
@@ -193,7 +202,7 @@
                               ((> len new-len) (remap) (trunc))
                               (t               (trunc) (remap)))
                             (setf done t))
-            (unless done (mtagmap-close mtagmap)))))))  
+            (unless done (mtagmap-close mtagmap)))))))
   (mtagmap-check mtagmap))
 
 
@@ -292,4 +301,3 @@
 	      (mtagmap-next m)
 	      (mtagmap-len m)
 	      (mtagmap-default-filename m)))))
-

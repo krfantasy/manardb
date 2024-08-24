@@ -19,32 +19,25 @@
   :author            "John Fremlin"
   :author            "Dan Lentz <danlentz@gmail.com>"
   :maintainer        "Dan Lentz <danlentz@gmail.com>"
-  :depends-on (:alexandria :osicat :iterate :closer-mop :contextl :cl-irregsexp
-                           #-sbcl :bordeaux-threads
+  :depends-on (:alexandria :osicat :iterate :closer-mop :contextl :cl-irregsexp :bordeaux-threads
                            #+sbcl :sb-concurrency)
   :components ((:module src :serial t
-                 :components ((:static-file "manardb.asd")
-                               (:file "package")
-                               (:file "widths")  
-                               (:file "utils")   
-                               (:file "struct")  
-                               (:file "mop")     
-                               (:file "mtagmap") 
-                               (:file "class")   
-                               (:file "types")   
-                               (:file "iterator")
-                               (:file "array")   
-                               (:file "box")     
-                               (:file "finalize")
-                               (:file "filesystem")
-                               (:file "fixed-string") 
-                               (:file "mcons")        
-                               (:file "gc")           
-                               (:file "rewrite-gc")
-                               ))))
-
-
-
-
-
-
+                :components ((:static-file "manardb.asd")
+                             (:file "package")
+                             (:file "widths")
+                             (:file "utils")
+                             (:file "struct")
+                             (:file "mop")
+                             (:file "mtagmap")
+                             (:file "class")
+                             (:file "types")
+                             (:file "iterator")
+                             (:file "array")
+                             (:file "box")
+                             (:file "finalize")
+                             (:file "filesystem")
+                             (:file "fixed-string")
+                             (:file "mcons")
+                             (:file "gc")
+                             (:file "rewrite-gc")
+                             ))))
